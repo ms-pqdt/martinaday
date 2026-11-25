@@ -87,6 +87,18 @@ footer{text-align:center;font-size:8px;color:#8f99d8;margin-top:24px}
 #start canvas{width:150px;image-rendering:pixelated;border:4px solid #fff;box-shadow:6px 6px 0 var(--org);animation:bob 1.6s steps(2) infinite;background:#fff}
 #start p{font-size:clamp(10px,3vw,14px);color:#fff;animation:blink 1s steps(2) infinite}
 @keyframes blink{50%{opacity:0}}
+
+.floor{padding:14px;margin-bottom:22px;overflow:hidden;text-align:center}
+.floor h2{font-size:12px;color:var(--org);margin-bottom:12px}
+.tl{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;position:absolute;left:14px;right:14px;bottom:14px;height:56px}
+.tl i{background:#ff4d6d;animation:tlc 1.2s steps(1) infinite}
+@keyframes tlc{0%{background:#ff4d6d}25%{background:#ffd23f}50%{background:#3ddc97}75%{background:#4aa3ff}}
+.dancers{position:relative;display:flex;justify-content:center;align-items:flex-end;gap:clamp(4px,3vw,26px);padding-bottom:34px;min-height:190px}
+.dancers canvas{width:clamp(80px,24vw,132px);height:auto;image-rendering:pixelated;position:relative;z-index:1}
+.dancers canvas.big{width:clamp(100px,30vw,164px)}
+.note{position:absolute;bottom:60px;font-size:28px;color:#fff;text-shadow:2px 2px 0 #000;animation:nup 2.6s linear forwards;pointer-events:none;z-index:2}
+@keyframes nup{to{transform:translateY(-150px) rotate(18deg);opacity:0}}
+.corner{position:fixed;right:6px;bottom:6px;width:76px;height:auto;image-rendering:pixelated;z-index:40;pointer-events:none;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.5))}
 </style>
 </head>
 <body>
@@ -126,6 +138,17 @@ footer{text-align:center;font-size:8px;color:#8f99d8;margin-top:24px}
     </div>
     <audio id="aud" src="martina-ya-llego.mp3" loop preload="auto"></audio>
   </section>
+
+  <section class="box floor" aria-label="Martina dançando salsa">
+    <h2 class="px">💃 PISTA DE SALSA 🎺</h2>
+    <div class="dancers" id="dancers">
+      <div class="tl" id="tl" aria-hidden="true"></div>
+      <canvas class="dg" width="32" height="40"></canvas>
+      <canvas class="dg big" width="32" height="40"></canvas>
+      <canvas class="dg" width="32" height="40"></canvas>
+    </div>
+  </section>
+  <canvas class="corner" id="corner" width="32" height="40" aria-hidden="true"></canvas>
 
   <section class="box pet">
     <div class="frame" id="frame" title="Clique para a Martina latir!"><canvas id="photo" width="64" height="66"></canvas></div>
@@ -303,14 +326,71 @@ $('frame').addEventListener('click',bark);
  const fm=s=>{s=Math.floor(s||0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
  const dur=()=>isFinite(a.duration)?a.duration:243;
  b.addEventListener('click',()=>{if(a.paused){a.play().catch(()=>{$('tm').textContent='NÃO FOI POSSÍVEL TOCAR'})}else a.pause()});
- a.addEventListener('play',()=>{pl.classList.add('playing');b.textContent='❚❚ PAUSAR'});
- a.addEventListener('pause',()=>{pl.classList.remove('playing');b.textContent='▶ TOCAR'});
+ a.addEventListener('play',()=>{pl.classList.add('playing');document.body.classList.add('music');b.textContent='❚❚ PAUSAR'});
+ a.addEventListener('pause',()=>{pl.classList.remove('playing');document.body.classList.remove('music');b.textContent='▶ TOCAR'});
  a.addEventListener('timeupdate',()=>{$('seekfill').style.width=(a.currentTime/dur()*100)+'%';$('tm').textContent=fm(a.currentTime)+' / '+fm(dur())});
  $('seek').addEventListener('click',e=>{const r=e.currentTarget.getBoundingClientRect();a.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*dur()});
 const ov=$('start');
  const hideOv=()=>{ov.style.display='none'};
  ov.addEventListener('click',()=>{a.play().catch(()=>{});hideOv()});
  a.play().then(hideOv).catch(()=>{ov.style.display='flex'});
+})();
+
+/* ===== Martina dançando salsa ===== */
+(function(){
+ const OUT='#3a2412';
+ const FR=[{dy:0,sx:-1,la:'up',ra:'down',ll:'lift',rl:'dn',hd:-1,sk:-2,tail:0,tg:1},
+           {dy:1,sx:0,la:'up',ra:'up',ll:'dn',rl:'dn',hd:0,sk:0,tail:1,tg:0},
+           {dy:0,sx:1,la:'down',ra:'up',ll:'dn',rl:'lift',hd:1,sk:2,tail:0,tg:1},
+           {dy:1,sx:0,la:'out',ra:'out',ll:'dn',rl:'dn',hd:0,sk:0,tail:1,tg:0}];
+ const PAL=[{skirt:'#e63946',trim:'#ffd23f',mar:'#ffd23f',flower:'#ff4d9d'},
+            {skirt:'#2f80ed',trim:'#ffffff',mar:'#ff9f1c',flower:'#ffd23f'},
+            {skirt:'#2fb36d',trim:'#ffffff',mar:'#ff4d6d',flower:'#ffffff'}];
+ const BASE={fur:'#d9954a',dark:'#b36f2b',white:'#ffffff',snout:'#f0c48a',nose:'#3b2314',pink:'#e89a9a',eye:'#111'};
+ function dog(cv,f,pi,mir){
+  const x=cv.getContext('2d');x.clearRect(0,0,32,40);const o=FR[((f%4)+4)%4],P=Object.assign({},BASE,PAL[pi]);
+  const bx=o.sx,dy=o.dy,hx=bx+o.hd;
+  const R=(a,b,w,h,c)=>{x.fillStyle=c;x.fillRect(mir?32-a-w:a,b,w,h)};
+  const S=(l,a,b,w,h,c)=>R(l?a+bx:32-a-w+bx,b+dy,w,h,c);
+  /* rabo */
+  R(21+bx,21+dy-o.tail*2,4,2,P.fur);R(24+bx,19+dy-o.tail*2,2,3,P.fur);
+  /* pernas */
+  const leg=(l,st)=>{if(st==='lift'){S(l,8,29,4,3,P.fur);S(l,6,31,5,2,P.white)}else{S(l,11,27,4,7,P.fur);S(l,10,34,6,2,P.white)}};
+  x.save();
+  const lgS=(l,st)=>{if(st==='lift'){R(l?7+bx:32-7-4+bx,29,4,3,P.fur);R(l?5+bx:32-5-5+bx,31,5,2,P.white)}else{R(l?11+bx:32-11-4+bx,27,4,7,P.fur);R(l?10+bx:32-10-6+bx,34,6,2,P.white)}};
+  lgS(true,o.ll);lgS(false,o.rl);x.restore();
+  /* saia */
+  const k=Math.round(o.sk/2);
+  R(10+bx,23+dy,12,2,P.skirt);R(8+bx+k,25+dy,16,3,P.skirt);R(8+bx+k,28+dy,16,1,P.trim);
+  [11,15,19].forEach(d=>R(d+bx+k,26+dy,1,1,P.trim));
+  /* tronco */
+  R(11+bx,15+dy,10,9,P.fur);R(13+bx,16+dy,6,6,P.white);R(11+bx,15+dy,1,8,P.dark);
+  /* braços + maracas */
+  const arm=(l,st)=>{
+   if(st==='up'){S(l,8,15,3,3,P.fur);S(l,6,12,3,3,P.fur);S(l,4,9,3,3,P.white);S(l,2,4,4,5,P.mar);S(l,3,9,1,1,'#6b4a2b')}
+   else if(st==='out'){S(l,5,17,6,3,P.fur);S(l,3,16,3,4,P.white);S(l,0,12,4,5,P.mar);S(l,1,17,1,1,'#6b4a2b')}
+   else{S(l,8,16,3,6,P.fur);S(l,8,22,3,2,P.white)}};
+  arm(true,o.la);arm(false,o.ra);
+  /* orelhas */
+  R(7+hx,1+dy,3,2,P.fur);R(6+hx,3+dy,4,3,P.fur);R(6+hx,6+dy,4,2,P.fur);R(7+hx,3+dy,1,4,P.pink);
+  R(22+hx,1+dy,3,2,P.fur);R(22+hx,3+dy,4,3,P.fur);R(22+hx,6+dy,4,2,P.fur);R(24+hx,3+dy,1,4,P.pink);
+  /* cabeça */
+  R(10+hx,4+dy,12,10,P.fur);R(12+hx,9+dy,8,5,P.snout);R(14+hx,9+dy,4,2,P.nose);
+  R(11+hx,7+dy,3,3,'#fff');R(12+hx,8+dy,2,2,P.eye);R(18+hx,7+dy,3,3,'#fff');R(19+hx,8+dy,2,2,P.eye);
+  R(14+hx,12+dy,4,1,P.nose);if(o.tg)R(15+hx,13+dy,2,2,'#ff7b9c');
+  R(8+hx,2+dy,3,3,P.flower);R(9+hx,3+dy,1,1,'#ffd23f');
+  /* contorno */
+  const im=x.getImageData(0,0,32,40),d=im.data,al=(a,b)=>(a<0||b<0||a>=32||b>=40)?0:d[(b*32+a)*4+3];
+  const oc=[0x3a,0x24,0x12],add=[];
+  for(let b=0;b<40;b++)for(let a=0;a<32;a++){if(al(a,b)===0&&(al(a+1,b)||al(a-1,b)||al(a,b+1)||al(a,b-1)))add.push((b*32+a)*4)}
+  add.forEach(i=>{d[i]=oc[0];d[i+1]=oc[1];d[i+2]=oc[2];d[i+3]=255});x.putImageData(im,0,0);
+ }
+ const ds=[...document.querySelectorAll('#dancers canvas')],cn=$('corner'),tl=$('tl'),dl=['0s','.3s','.6s','.9s'];
+ for(let i=0;i<12;i++){const t=document.createElement('i');t.style.animationDelay=(-(i%4)*.3)+'s';tl.appendChild(t)}
+ let f=0;
+ function step(){f++;ds.forEach((c,i)=>dog(c,f+i*2,i,i===2));dog(cn,f,0,false);
+  if(document.body.classList.contains('music')&&f%3===0){const n=document.createElement('span');n.className='note';n.textContent=['♪','♫','♬'][f%3+((f>>2)%3>1?0:0)]||'♪';n.style.left=(10+Math.random()*80)+'%';n.style.color=['#ffd23f','#3ddc97','#ff4d6d','#4aa3ff'][(f>>1)%4];$('dancers').appendChild(n);setTimeout(()=>n.remove(),2700)}}
+ step();setInterval(step,230);
 })();
 
 /* ===== lembretes ===== */
