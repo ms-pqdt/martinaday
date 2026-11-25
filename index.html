@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contagem regressiva: Martina chega ao Rio!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b1033;--panel:#171d52;--panel2:#222a73;--ink:#fff;--sun:#ffd23f;--org:#ff9f1c;--red:#ff4d6d;--mint:#3ddc97;--sky:#4aa3ff}
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg)}
+body{font-family:'VT323',monospace;font-size:22px;color:var(--ink);min-height:100vh;overflow-x:hidden;
+ background:linear-gradient(#0b1033 0%,#1b1f5e 55%,#3a2a7a 100%) fixed;position:relative}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.stars i{position:absolute;width:4px;height:4px;background:#fff;animation:tw 2s steps(2) infinite}
+@keyframes tw{50%{opacity:.15}}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
+ background:repeating-linear-gradient(transparent 0 3px,rgba(0,0,0,.12) 3px 4px)}
+main{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:18px 14px 50px}
+.px{font-family:'Press Start 2P',monospace;line-height:1.5}
+.box{background:var(--panel);border:4px solid #fff;box-shadow:6px 6px 0 #000;position:relative}
+h1{font-size:clamp(14px,3.6vw,24px);text-align:center;color:var(--sun);text-shadow:3px 3px 0 #b5380b,6px 6px 0 #000;margin:10px 0 6px}
+h1 span{display:inline-block;animation:hop 1.2s steps(4) infinite}
+@keyframes hop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
+.sub{text-align:center;font-size:24px;color:#c9d2ff;margin-bottom:16px}
+.map{padding:8px;margin-bottom:22px}
+.hud{display:flex;justify-content:space-between;font-size:9px;gap:6px;padding:4px 2px 8px;color:var(--sun)}
+.stage{position:relative;width:100%;max-width:560px;margin:0 auto;border:4px solid #000;background:#1d4f91}
+canvas.pix{display:block;width:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+.lbl{position:absolute;font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.5vw,9px);color:#fff;text-shadow:2px 2px 0 #000;white-space:nowrap;pointer-events:none}
+.lbl.rio{transform:translateX(-100%)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.tile{background:var(--panel2);border:4px solid #fff;box-shadow:5px 5px 0 #000;text-align:center;padding:14px 4px 10px}
+.tile b{display:block;font-family:'Press Start 2P',monospace;font-weight:400;font-size:clamp(18px,6vw,38px);color:var(--sun);text-shadow:3px 3px 0 #000}
+.tile small{display:block;margin-top:10px;font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.8vw,9px);color:#c9d2ff}
+.tile.tick b{animation:pop .25s steps(3)}
+@keyframes pop{50%{transform:scale(1.18)}}
+.bar{display:grid;grid-template-columns:repeat(25,1fr);gap:3px;padding:8px;background:#000;border:4px solid #fff;margin:16px 0 6px}
+.bar i{height:16px;background:#2a2f6b}
+.bar i.on{background:var(--org)}
+.bar i.on:nth-child(odd){background:#ffb84d}
+.pct{text-align:center;font-size:9px;margin-bottom:22px;color:#c9d2ff}
+.pet{display:flex;gap:18px;align-items:center;padding:16px;margin-bottom:22px;flex-wrap:wrap;justify-content:center}
+.frame{background:#fff;padding:6px;border:4px solid #000;box-shadow:5px 5px 0 var(--org);cursor:pointer;animation:bob 1.6s steps(2) infinite}
+.frame canvas{display:block;width:192px;height:auto;image-rendering:pixelated}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-1.5deg)}}
+.frame.bark{animation:bark .4s steps(4)}
+@keyframes bark{0%,100%{transform:scale(1)}50%{transform:scale(1.12) rotate(3deg)}}
+.say{flex:1;min-width:200px}
+.bubble{background:#fff;color:#111;border:4px solid #000;padding:12px 14px;position:relative;font-size:26px;line-height:1.1}
+.bubble::before{content:"";position:absolute;left:-18px;top:24px;border:10px solid transparent;border-right:12px solid #000}
+.bubble::after{content:"";position:absolute;left:-10px;top:26px;border:8px solid transparent;border-right:10px solid #fff}
+.name{font-size:11px;color:var(--sun);margin-top:12px}
+.hint{font-size:20px;color:#c9d2ff;margin-top:4px}
+.notif{padding:16px;margin-bottom:20px}
+.notif h2{font-size:12px;color:var(--mint);margin-bottom:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+select,button,a.btn{font-family:'Press Start 2P',monospace;font-size:10px;padding:12px 14px;border:4px solid #000;background:#fff;color:#000;box-shadow:4px 4px 0 #000;cursor:pointer;text-decoration:none;display:inline-block}
+button.go,a.btn.go{background:var(--mint)}
+a.btn.alt{background:var(--sky)}
+button:active,a.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000}
+ol{padding-left:26px;font-size:22px;line-height:1.15;color:#dfe4ff}
+.msg{min-height:24px;color:var(--sun)}
+footer{text-align:center;font-size:8px;color:#8f99d8;margin-top:24px}
+.conf{position:fixed;top:-12px;width:10px;height:10px;z-index:60;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+.arrived h1{color:var(--mint)}
+@media (max-width:520px){body{font-size:20px}.hud{font-size:7px}.frame canvas{width:150px}.bubble{font-size:22px}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<main id="app">
+  <h1 class="px" id="title"></h1>
+  <p class="sub" id="sub">A Martina saiu da Colômbia rumo ao Rio de Janeiro!</p>
+
+  <section class="box map">
+    <div class="hud px"><span>🇨🇴 VALE DO COCORA</span><span id="distTxt">✈ EM VOO</span><span>RIO 🇧🇷</span></div>
+    <div class="stage">
+      <canvas id="map" class="pix" width="150" height="162"></canvas>
+      <span class="lbl" style="left:5%;top:4%">COLÔMBIA</span>
+      <span class="lbl" style="left:14%;top:20%">VALE DO COCORA</span>
+      <span class="lbl" style="left:52%;top:36%">BRASIL</span>
+      <span class="lbl rio" style="left:75%;top:69%">RIO DE JANEIRO</span>
+    </div>
+  </section>
+
+  <section class="tiles" id="tiles">
+    <div class="tile"><b id="d">00</b><small>DIAS</small></div>
+    <div class="tile"><b id="h">00</b><small>HORAS</small></div>
+    <div class="tile"><b id="m">00</b><small>MIN</small></div>
+    <div class="tile" id="st"><b id="s">00</b><small>SEG</small></div>
+  </section>
+  <div class="bar" id="bar"></div>
+  <div class="pct px" id="pct"></div>
+
+  <section class="box pet">
+    <div class="frame" id="frame" title="Clique para a Martina latir!"><canvas id="photo" width="64" height="66"></canvas></div>
+    <div class="say">
+      <div class="bubble" id="bubble">Au au!</div>
+      <div class="name px">MARTINA</div>
+      <div class="hint">(clique nela pra ouvir um latido 🐾)</div>
+    </div>
+  </section>
+
+  <section class="box notif">
+    <h2 class="px">📱 AVISAR NO IPHONE</h2>
+    <div style="font-size:22px;color:#dfe4ff">Receba uma notificação por dia, com o texto “Faltam X dias…”, direto no seu iPhone:</div>
+    <div class="row">
+      <label class="px" style="font-size:9px" for="hr">HORA DO AVISO</label>
+      <select id="hr"></select>
+      <button class="go" id="ics">⬇ BAIXAR LEMBRETES</button>
+    </div>
+    <ol>
+      <li>Toque em “Baixar lembretes” e abra o arquivo no iPhone.</li>
+      <li>Escolha “Adicionar todos” no Calendário.</li>
+      <li>Pronto! O iPhone avisa todo dia no horário escolhido, até a chegada.</li>
+    </ol>
+    <div class="msg px" id="msg" style="font-size:9px"></div>
+    <div class="row"><a class="btn alt" id="gcal" href="#" target="_blank" rel="noopener">OU: GOOGLE AGENDA</a></div>
+  </section>
+
+  <footer class="px">CHEGADA PREVISTA: 15/12/2026 · HORÁRIO DE BRASÍLIA<br><br>FEITO COM ♥ PRA MARTINA</footer>
+</main>
+
+<script>
+(function(){
+"use strict";
+const START=new Date('2026-11-24T00:00:00-03:00').getTime();
+const ARR=new Date('2026-12-15T08:00:00-03:00').getTime();
+const PHOTO='data:image/png;base64,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';
+const FORCE_ARRIVED=location.hash==='#chegou';
+
+/* estrelas */
+const st=document.getElementById('stars');
+for(let i=0;i<60;i++){const e=document.createElement('i');e.style.left=Math.random()*100+'%';e.style.top=Math.random()*100+'%';e.style.animationDelay=(Math.random()*2)+'s';st.appendChild(e)}
+/* título */
+const T='MARTINA ESTÁ A CAMINHO!';const tt=document.getElementById('title');
+T.split('').forEach((c,i)=>{const s=document.createElement('span');s.textContent=c===' '?' ':c;s.style.animationDelay=(i*0.07)+'s';tt.appendChild(s)});
+/* barra */
+const bar=document.getElementById('bar');for(let i=0;i<25;i++)bar.appendChild(document.createElement('i'));
+/* horas */
+const hr=document.getElementById('hr');for(let h=6;h<=22;h++){const o=document.createElement('option');o.value=h;o.textContent=String(h).padStart(2,'0')+':00';if(h===9)o.selected=true;hr.appendChild(o)}
+
+/* ===== MAPA ===== */
+const W=150,H=162;
+const proj=(lo,la)=>[(lo+82)*3,(14-la)*3];
+const SA=[[-77.3,8.6],[-76,9.4],[-75,10.8],[-73,11.3],[-71.5,12.4],[-69,11.5],[-66,10.6],[-62,10.7],[-61,9],[-60,8],[-58,6.8],[-55,5.8],[-52,5],[-51,4],[-50,1.5],[-50,0],[-48.5,-1],[-45,-1.5],[-42,-2.8],[-39,-3.5],[-37,-5],[-35,-6],[-34.8,-8],[-35.5,-9.5],[-37,-11.5],[-38.5,-13],[-39,-15.5],[-39.5,-18],[-40.5,-20.5],[-41.5,-22.5],[-43.2,-23],[-45,-23.8],[-48,-25.5],[-48.7,-28],[-50,-30],[-52,-32.2],[-53.5,-34],[-55,-35],[-57,-34.5],[-58.5,-34.2],[-57,-36.5],[-57,-38.2],[-62,-39],[-65,-41],[-72,-41],[-72,-35],[-71.5,-30],[-70.5,-24],[-70.2,-18],[-72,-17],[-75,-15],[-77,-12],[-79,-8],[-81,-5],[-80,-2.5],[-80.5,-1],[-80,0.5],[-78.8,1.8],[-77.5,4],[-77.3,6],[-77.8,7.5]];
+const BR=[[-60,5],[-58,3.5],[-56,2],[-54,2.2],[-52,2],[-51,4],[-50,1.5],[-50,0],[-48.5,-1],[-45,-1.5],[-42,-2.8],[-39,-3.5],[-37,-5],[-35,-6],[-34.8,-8],[-35.5,-9.5],[-37,-11.5],[-38.5,-13],[-39,-15.5],[-39.5,-18],[-40.5,-20.5],[-41.5,-22.5],[-43.2,-23],[-45,-23.8],[-48,-25.5],[-48.7,-28],[-50,-30],[-52,-32.2],[-53.5,-34],[-53.5,-33.7],[-57.5,-30.2],[-57.5,-28],[-55,-27],[-54,-25.5],[-54.6,-24],[-55.5,-22],[-57.8,-22],[-58,-20],[-57.5,-17.5],[-60,-16.3],[-60,-13.5],[-65,-11],[-68,-10.8],[-70.5,-11],[-73,-9],[-73.5,-7.5],[-70.5,-4.5],[-69.5,-4.2],[-70,-1],[-69.8,1.2],[-67.5,2],[-64,4],[-62,4.2],[-60.5,5.2]];
+const CO=[[-77.3,8.6],[-76,9.4],[-75,10.8],[-73,11.3],[-71.5,12.4],[-72,11],[-71.4,10],[-72.5,9],[-72,7.5],[-70,7],[-67.5,6],[-67.5,2],[-69.8,1.2],[-70,-1],[-69.5,-4.2],[-71,-4],[-73,-3.5],[-74,-1.5],[-75.3,-0.1],[-77,0.3],[-78.8,1.8],[-77.5,4],[-77.3,6],[-77.8,7.5]];
+function mask(poly){const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.beginPath();poly.forEach((p,i)=>{const q=proj(p[0],p[1]);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});x.closePath();x.fillStyle='#000';x.fill();const d=x.getImageData(0,0,W,H).data;const m=new Uint8Array(W*H);for(let i=0;i<W*H;i++)m[i]=d[i*4+3]>127?1:0;return m}
+const mSA=mask(SA),mBR=mask(BR),mCO=mask(CO);
+const id=new Uint8Array(W*H);for(let i=0;i<W*H;i++)id[i]=mSA[i]?(mCO[i]?3:(mBR[i]?2:1)):0;
+function hex(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]}
+const COL={w1:hex('#1d4f91'),w2:hex('#1a4785'),w3:hex('#235aa3'),l1:[hex('#a9a35a'),hex('#9a944f')],l2:[hex('#58b04a'),hex('#4ea142')],l3:[hex('#f4c542'),hex('#e6b631')],coast:hex('#16301c'),bord:hex('#5b4a1f'),tree:hex('#2f7d3a'),sand:hex('#e8d9a0')};
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+const base=document.createElement('canvas');base.width=W;base.height=H;
+(function(){const x=base.getContext('2d');const im=x.createImageData(W,H);const d=im.data;
+ const at=(a,b)=>(a<0||b<0||a>=W||b>=H)?0:id[b*W+a];
+ for(let y=0;y<H;y++)for(let a=0;a<W;a++){const k=y*W+a,t=id[k];let c;
+  if(!t){c=((a+y)%2)?COL.w1:COL.w2;if(((a>>2)+(y>>2))%5===0)c=COL.w3;
+    const n=[at(a+1,y),at(a-1,y),at(a,y+1),at(a,y-1)];if(n.some(v=>v))c=hex('#2b6bb8');}
+  else{const pal=t===1?COL.l1:t===2?COL.l2:COL.l3;c=pal[(a+y)%2];
+    if(t===2&&rnd()<.05)c=COL.tree;
+    if(t===1&&rnd()<.03)c=COL.sand;
+    const n=[at(a+1,y),at(a-1,y),at(a,y+1),at(a,y-1)];
+    if(n.some(v=>v===0))c=COL.coast;else if(n.some(v=>v!==t&&v!==0))c=COL.bord;}
+  d[k*4]=c[0];d[k*4+1]=c[1];d[k*4+2]=c[2];d[k*4+3]=255}
+ x.putImageData(im,0,0)})();
+/* ondas */
+const waves=[];for(let i=0;i<110;){const a=Math.floor(rnd()*(W-3)),b=Math.floor(rnd()*H);if(!id[b*W+a]&&!id[b*W+a+2]){waves.push([a,b,Math.floor(rnd()*4)]);i++}}
+/* nuvens */
+const cloudShape=[[2,0,6,1],[0,1,11,2],[1,3,9,1]];
+const clouds=[[10,18,.04],[70,6,.03],[110,60,.05],[30,95,.035],[90,130,.045],[5,140,.03]].map(c=>({x:c[0],y:c[1],v:c[2]}));
+/* rota */
+const A=proj(-75.5,4.64),B=proj(-43.2,-22.9);
+const C=[(A[0]+B[0])/2+8,(A[1]+B[1])/2-30];
+const bez=t=>[(1-t)*(1-t)*A[0]+2*(1-t)*t*C[0]+t*t*B[0],(1-t)*(1-t)*A[1]+2*(1-t)*t*C[1]+t*t*B[1]];
+const dbez=t=>[2*(1-t)*(C[0]-A[0])+2*t*(B[0]-C[0]),2*(1-t)*(C[1]-A[1])+2*t*(B[1]-C[1])];
+/* avião */
+const SPR=[".....gg......",".....gww.....",".....gwww....",".r...gwwww...",".rr.gwwwwww..","rwwwwwwwwwwbb",".rr.gwwwwww..",".r...gwwww...",".....gwww....",".....gww.....",".....gg......"];
+const SC={w:[255,255,255],g:[184,196,214],r:[230,57,70],b:[74,163,255]};
+const planeCache={};
+function planeFor(q){if(planeCache[q])return planeCache[q];const S=19,c=document.createElement('canvas');c.width=S;c.height=S;const x=c.getContext('2d');const im=x.createImageData(S,S);
+ const ang=q*Math.PI/4,ca=Math.cos(ang),sa=Math.sin(ang);const sw=13,sh=11;
+ for(let y=0;y<S;y++)for(let a=0;a<S;a++){const dx=a-(S-1)/2,dy=y-(S-1)/2;const sx=Math.round(dx*ca+dy*sa+(sw-1)/2),sy=Math.round(-dx*sa+dy*ca+(sh-1)/2);
+  if(sx>=0&&sy>=0&&sx<sw&&sy<sh){const ch=SPR[sy][sx];if(ch!=='.'){const col=SC[ch];const i=(y*S+a)*4;im.data[i]=col[0];im.data[i+1]=col[1];im.data[i+2]=col[2];im.data[i+3]=255}}}
+ x.putImageData(im,0,0);return planeCache[q]=c}
+/* foto */
+const img=new Image();let imgOK=false;
+const badge=document.createElement('canvas');badge.width=16;badge.height=15;
+img.onload=()=>{imgOK=true;const p=document.getElementById('photo').getContext('2d');p.imageSmoothingEnabled=false;p.drawImage(img,0,0);
+ const b=badge.getContext('2d');b.imageSmoothingEnabled=true;b.drawImage(img,22,2,42,38,0,0,16,15)};
+img.src=PHOTO;
+
+const mc=document.getElementById('map'),ctx=mc.getContext('2d');ctx.imageSmoothingEnabled=false;
+const puffs=[];let frame=0,lastP=0;
+
+function progress(){if(FORCE_ARRIVED)return 1;return Math.min(1,Math.max(0,(Date.now()-START)/(ARR-START)))}
+function drawMap(){
+ frame++;const p=progress();
+ ctx.drawImage(base,0,0);
+ ctx.fillStyle='#8cc3f5';
+ for(const w of waves){if(((frame>>3)+w[2])%4===0)ctx.fillRect(w[0],w[1],3,1)}
+ /* rota */
+ const N=90;
+ for(let i=0;i<=N;i++){const t=i/N,q=bez(t),x=Math.round(q[0]),y=Math.round(q[1]);
+  if(t<=p){if(i%2===0){ctx.fillStyle='#ff9f1c';ctx.fillRect(x,y,1,1)}}
+  else if(i%3===0){ctx.fillStyle='#ffffff';ctx.fillRect(x,y,1,1)}}
+ /* marcadores */
+ const pul=Math.floor(frame/10)%3;
+ ctx.fillStyle='#ffd23f';ctx.fillRect(A[0]-1,A[1]-1,3,3);
+ ctx.strokeStyle='rgba(255,210,63,.9)';ctx.lineWidth=1;const r=3+pul*2;ctx.strokeRect(Math.round(A[0])-r+.5,Math.round(A[1])-r+.5,r*2,r*2);
+ ctx.fillStyle='#ff4d6d';ctx.fillRect(B[0]-2,B[1]-2,5,5);ctx.fillStyle='#fff';ctx.fillRect(B[0],B[1],1,1);
+ const r2=4+pul*2;ctx.strokeStyle='rgba(255,77,109,.9)';ctx.strokeRect(Math.round(B[0])-r2+.5,Math.round(B[1])-r2+.5,r2*2,r2*2);
+ /* avião */
+ const q=bez(p),tg=dbez(Math.min(.999,p));let ang=Math.atan2(tg[1],tg[0]);const qa=((Math.round(ang/(Math.PI/4))%8)+8)%8;
+ const bob=p>=1?0:Math.round(Math.sin(frame/12)*1.2);
+ const px=Math.round(q[0]),py=Math.round(q[1])+bob;
+ if(p<1&&frame%4===0){puffs.push({x:q[0],y:q[1],l:26})}
+ for(let i=puffs.length-1;i>=0;i--){const f=puffs[i];f.l--;if(f.l<=0){puffs.splice(i,1);continue}
+  ctx.fillStyle='rgba(255,255,255,'+(f.l/32)+')';const s=f.l>16?2:1;ctx.fillRect(Math.round(f.x),Math.round(f.y),s,s)}
+ /* sombra */
+ ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(px-4,py+9,9,2);
+ ctx.drawImage(planeFor(qa),px-9,py-9);
+ /* foto da Martina na janela */
+ if(imgOK){let bx=Math.min(W-18,Math.max(2,px-8)),by=py-30;if(by<2)by=py+12;
+  ctx.fillStyle='#000';ctx.fillRect(bx-2,by-2,20,19);ctx.fillStyle='#fff';ctx.fillRect(bx-1,by-1,18,17);
+  ctx.drawImage(badge,bx,by);
+  ctx.fillStyle='#fff';ctx.fillRect(px,Math.min(by+16,py-9),1,Math.max(0,py-9-(by+16)));}
+ /* nuvens */
+ ctx.fillStyle='rgba(255,255,255,.82)';
+ for(const c of clouds){c.x+=c.v;if(c.x>W+12)c.x=-14;const cx=Math.round(c.x),cy=c.y;for(const s of cloudShape)ctx.fillRect(cx+s[0],cy+s[1],s[2],s[3])}
+}
+
+/* ===== contagem ===== */
+const $=i=>document.getElementById(i);const pad=n=>String(n).padStart(2,'0');
+let lastS=-1,arrivedShown=false,say=null;
+function phaseMsg(days,arrived){
+ if(arrived)return 'CHEGUEI! Agora é só carinho e petisco! 🐾';
+ if(days>=14)return 'Au au! Já tô arrumando a minha malinha pro Rio!';
+ if(days>=8)return 'Uma semana e pouquinho… já escolhi meu lugar no sofá!';
+ if(days>=2)return 'Tô quase aí! Pode ir separando os petiscos!';
+ if(days>=1)return 'É AMANHÃ! Au au au au!';
+ return 'HOJE EU CHEGO! Me espera no aeroporto!';
+}
+function tick(){
+ let ms=FORCE_ARRIVED?0:ARR-Date.now();const arrived=ms<=0;if(arrived)ms=0;
+ const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;
+ $('d').textContent=pad(d);$('h').textContent=pad(h);$('m').textContent=pad(m);$('s').textContent=pad(sc);
+ if(sc!==lastS){lastS=sc;const t=$('st');t.classList.remove('tick');void t.offsetWidth;t.classList.add('tick')}
+ const p=progress();const on=Math.round(p*25);[...bar.children].forEach((e,i)=>e.classList.toggle('on',i<on));
+ $('pct').textContent='VIAGEM: '+Math.floor(p*100)+'%';
+ if(!say)$('bubble').textContent=phaseMsg(d,arrived);
+ $('distTxt').textContent=arrived?'🏠 CHEGOU!':'✈ EM VOO';
+ if(arrived&&!arrivedShown){arrivedShown=true;document.body.classList.add('arrived');$('title').textContent='A MARTINA CHEGOU! 🐾';$('sub').textContent='Bem-vinda ao Rio de Janeiro, Martina!';celebrate()}
+}
+function celebrate(){const cols=['#ffd23f','#ff4d6d','#3ddc97','#4aa3ff','#ff9f1c','#fff'];
+ for(let i=0;i<90;i++){const e=document.createElement('div');e.className='conf';e.style.left=Math.random()*100+'vw';e.style.background=cols[i%cols.length];e.style.animationDuration=(2.5+Math.random()*3)+'s';e.style.animationDelay=(Math.random()*2)+'s';document.body.appendChild(e);setTimeout(()=>e.remove(),8000)}}
+/* latido */
+let ac=null;
+function bark(){const f=$('frame');f.classList.remove('bark');void f.offsetWidth;f.classList.add('bark');
+ $('bubble').textContent='AU AU! 🐶';say=1;clearTimeout(bark.t);bark.t=setTimeout(()=>{say=null;tick()},1800);
+ try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const now=ac.currentTime;
+  [0,.16].forEach(o=>{const os=ac.createOscillator(),g=ac.createGain();os.type='square';os.frequency.setValueAtTime(520,now+o);os.frequency.exponentialRampToValueAtTime(220,now+o+.12);g.gain.setValueAtTime(.08,now+o);g.gain.exponentialRampToValueAtTime(.001,now+o+.13);os.connect(g);g.connect(ac.destination);os.start(now+o);os.stop(now+o+.14)})}catch(e){}}
+$('frame').addEventListener('click',bark);
+
+/* ===== lembretes ===== */
+function f2(n){return String(n).padStart(2,'0')}
+function loc(d,h){return d.getFullYear()+f2(d.getMonth()+1)+f2(d.getDate())+'T'+f2(h)+'0000'}
+function buildICS(hour){
+ const arrDay=new Date(2026,11,15),now=new Date(),L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Martina//Contagem//PT','CALSCALE:GREGORIAN','X-WR-CALNAME:Chegada da Martina'];
+ const stamp=now.toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
+ for(let d=new Date(now.getFullYear(),now.getMonth(),now.getDate());d<=arrDay;d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1)){
+  const start=new Date(d.getFullYear(),d.getMonth(),d.getDate(),hour);if(start<=now)continue;
+  const n=Math.round((arrDay-d)/864e5);
+  const txt=n===0?'🐶✈️ HOJE! A Martina chega ao Rio!':n===1?'🐶 Falta 1 dia para a Martina chegar!':'🐶 Faltam '+n+' dias para a Martina chegar!';
+  L.push('BEGIN:VEVENT','UID:martina-'+n+'@contagem','DTSTAMP:'+stamp,'DTSTART:'+loc(d,hour),'DTEND:'+loc(d,hour).replace(/T\d\d/,'T'+f2(hour))+'','SUMMARY:'+txt,'DESCRIPTION:Contagem regressiva da chegada da Martina (Colômbia → Rio de Janeiro)','TRANSP:TRANSPARENT','BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:'+txt,'END:VALARM','END:VEVENT')}
+ L.push('END:VCALENDAR');
+ return L.join('\r\n').replace(/DTEND:(\d{8}T)(\d\d)0000/g,(m,a,b)=>'DTEND:'+a+b+'3000');
+}
+$('ics').addEventListener('click',async()=>{
+ const msg=$('msg');msg.textContent='';
+ const h=parseInt(hr.value,10);const data=buildICS(h);
+ if(!/BEGIN:VEVENT/.test(data)){msg.textContent='JÁ PASSOU DESSE HORÁRIO HOJE E NÃO HÁ DIAS RESTANTES.';return}
+ try{const blob=new Blob([data],{type:'text/calendar'});const u=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=u;a.download='martina-contagem.ics';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),4000);
+  msg.textContent='ARQUIVO PRONTO! ABRA NO IPHONE E TOQUE EM "ADICIONAR TODOS".';
+ }catch(e){msg.textContent='NÃO FOI POSSÍVEL SALVAR. USE A OPÇÃO DO GOOGLE AGENDA.'}
+});
+function gcal(){const h=parseInt(hr.value,10);const d=new Date();let s=new Date(d.getFullYear(),d.getMonth(),d.getDate()+(d.getHours()>=h?1:0));
+ const e=new Date(2026,11,15);const cnt=Math.max(1,Math.round((e-s)/864e5)+1);
+ const u='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('🐶 Falta pouco pra Martina chegar!')+'&details='+encodeURIComponent('Contagem regressiva: Martina chega ao Rio de Janeiro em 15/12/2026.')+'&dates='+loc(s,h)+'/'+loc(s,h).replace(/(\d\d)0000$/,'$13000')+'&ctz=America/Sao_Paulo&recur='+encodeURIComponent('RRULE:FREQ=DAILY;COUNT='+cnt);
+ $('gcal').href=u}
+hr.addEventListener('change',gcal);gcal();
+
+tick();setInterval(tick,250);
+let last=0;(function loop(t){if(t-last>=33){last=t;drawMap()}requestAnimationFrame(loop)})(0);
+})();
+</script>
+</body>
+</html>
