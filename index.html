@@ -68,6 +68,19 @@ footer{text-align:center;font-size:8px;color:#8f99d8;margin-top:24px}
 .arrived h1{color:var(--mint)}
 @media (max-width:520px){body{font-size:20px}.hud{font-size:7px}.frame canvas{width:150px}.bubble{font-size:22px}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important}}
+
+.player{display:flex;gap:14px;align-items:center;padding:14px;margin-bottom:22px}
+.player button{min-width:96px;height:64px;line-height:1.4}
+.pinfo{flex:1;min-width:0}
+.ttl{font-size:clamp(8px,2.4vw,11px);color:var(--sun)}
+.eq{display:flex;gap:4px;align-items:flex-end;height:24px;margin:10px 0}
+.eq i{width:8px;height:4px;background:var(--mint)}
+.playing .eq i{animation:eqb .6s steps(4) infinite}
+.eq i:nth-child(2){animation-delay:-.1s}.eq i:nth-child(3){animation-delay:-.3s}.eq i:nth-child(4){animation-delay:-.2s}.eq i:nth-child(5){animation-delay:-.45s}.eq i:nth-child(6){animation-delay:-.15s}.eq i:nth-child(7){animation-delay:-.35s}
+@keyframes eqb{0%{height:4px}25%{height:22px}50%{height:10px}75%{height:18px}100%{height:4px}}
+.seek{height:14px;background:#000;border:3px solid #fff;cursor:pointer}
+.seek i{display:block;height:100%;width:0;background:var(--org)}
+.tm{font-size:8px;color:#c9d2ff;margin-top:8px}
 </style>
 </head>
 <body>
@@ -95,6 +108,17 @@ footer{text-align:center;font-size:8px;color:#8f99d8;margin-top:24px}
   </section>
   <div class="bar" id="bar"></div>
   <div class="pct px" id="pct"></div>
+
+  <section class="box player" id="player">
+    <button class="go px" id="play">▶ TOCAR</button>
+    <div class="pinfo">
+      <div class="ttl px">♪ MARTINA YA LLEGÓ</div>
+      <div class="eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="seek" id="seek"><i id="seekfill"></i></div>
+      <div class="tm px" id="tm">0:00 / 4:03</div>
+    </div>
+    <audio id="aud" src="martina-ya-llego.mp3" loop preload="none"></audio>
+  </section>
 
   <section class="box pet">
     <div class="frame" id="frame" title="Clique para a Martina latir!"><canvas id="photo" width="64" height="66"></canvas></div>
@@ -266,6 +290,17 @@ function bark(){const f=$('frame');f.classList.remove('bark');void f.offsetWidth
  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const now=ac.currentTime;
   [0,.16].forEach(o=>{const os=ac.createOscillator(),g=ac.createGain();os.type='square';os.frequency.setValueAtTime(520,now+o);os.frequency.exponentialRampToValueAtTime(220,now+o+.12);g.gain.setValueAtTime(.08,now+o);g.gain.exponentialRampToValueAtTime(.001,now+o+.13);os.connect(g);g.connect(ac.destination);os.start(now+o);os.stop(now+o+.14)})}catch(e){}}
 $('frame').addEventListener('click',bark);
+
+/* ===== música ===== */
+(function(){const a=$('aud'),b=$('play'),pl=$('player');
+ const fm=s=>{s=Math.floor(s||0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+ const dur=()=>isFinite(a.duration)?a.duration:243;
+ b.addEventListener('click',()=>{if(a.paused){a.play().catch(()=>{$('tm').textContent='NÃO FOI POSSÍVEL TOCAR'})}else a.pause()});
+ a.addEventListener('play',()=>{pl.classList.add('playing');b.textContent='❚❚ PAUSAR'});
+ a.addEventListener('pause',()=>{pl.classList.remove('playing');b.textContent='▶ TOCAR'});
+ a.addEventListener('timeupdate',()=>{$('seekfill').style.width=(a.currentTime/dur()*100)+'%';$('tm').textContent=fm(a.currentTime)+' / '+fm(dur())});
+ $('seek').addEventListener('click',e=>{const r=e.currentTarget.getBoundingClientRect();a.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*dur()});
+})();
 
 /* ===== lembretes ===== */
 function f2(n){return String(n).padStart(2,'0')}
