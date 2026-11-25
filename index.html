@@ -81,10 +81,17 @@ footer{text-align:center;font-size:8px;color:#8f99d8;margin-top:24px}
 .seek{height:14px;background:#000;border:3px solid #fff;cursor:pointer}
 .seek i{display:block;height:100%;width:0;background:var(--org)}
 .tm{font-size:8px;color:#c9d2ff;margin-top:8px}
+
+#start{position:fixed;inset:0;z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:26px;background:rgba(11,16,51,.96);cursor:pointer;text-align:center;padding:20px}
+#start h2{font-size:clamp(14px,4.5vw,26px);color:var(--sun);text-shadow:3px 3px 0 #b5380b,6px 6px 0 #000}
+#start canvas{width:150px;image-rendering:pixelated;border:4px solid #fff;box-shadow:6px 6px 0 var(--org);animation:bob 1.6s steps(2) infinite;background:#fff}
+#start p{font-size:clamp(10px,3vw,14px);color:#fff;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
 </style>
 </head>
 <body>
 <div class="stars" id="stars"></div>
+<div id="start"><h2 class="px">MARTINA CHEGA<br>NO RIO!</h2><canvas id="startpic" width="64" height="66"></canvas><p class="px">▶ TOQUE PARA COMEÇAR ♪</p></div>
 <main id="app">
   <h1 class="px" id="title"></h1>
   <p class="sub" id="sub">A Martina saiu da Colômbia rumo ao Rio de Janeiro!</p>
@@ -117,7 +124,7 @@ footer{text-align:center;font-size:8px;color:#8f99d8;margin-top:24px}
       <div class="seek" id="seek"><i id="seekfill"></i></div>
       <div class="tm px" id="tm">0:00 / 4:03</div>
     </div>
-    <audio id="aud" src="martina-ya-llego.mp3" loop preload="none"></audio>
+    <audio id="aud" src="martina-ya-llego.mp3" loop preload="auto"></audio>
   </section>
 
   <section class="box pet">
@@ -215,7 +222,7 @@ function planeFor(q){if(planeCache[q])return planeCache[q];const S=19,c=document
 /* foto */
 const img=new Image();let imgOK=false;
 const badge=document.createElement('canvas');badge.width=16;badge.height=15;
-img.onload=()=>{imgOK=true;const p=document.getElementById('photo').getContext('2d');p.imageSmoothingEnabled=false;p.drawImage(img,0,0);
+img.onload=()=>{imgOK=true;const p=document.getElementById('photo').getContext('2d');p.imageSmoothingEnabled=false;p.drawImage(img,0,0);const sp=document.getElementById('startpic').getContext('2d');sp.imageSmoothingEnabled=false;sp.drawImage(img,0,0);
  const b=badge.getContext('2d');b.imageSmoothingEnabled=true;b.drawImage(img,22,2,42,38,0,0,16,15)};
 img.src=PHOTO;
 
@@ -300,6 +307,10 @@ $('frame').addEventListener('click',bark);
  a.addEventListener('pause',()=>{pl.classList.remove('playing');b.textContent='▶ TOCAR'});
  a.addEventListener('timeupdate',()=>{$('seekfill').style.width=(a.currentTime/dur()*100)+'%';$('tm').textContent=fm(a.currentTime)+' / '+fm(dur())});
  $('seek').addEventListener('click',e=>{const r=e.currentTarget.getBoundingClientRect();a.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*dur()});
+const ov=$('start');
+ const hideOv=()=>{ov.style.display='none'};
+ ov.addEventListener('click',()=>{a.play().catch(()=>{});hideOv()});
+ a.play().then(hideOv).catch(()=>{ov.style.display='flex'});
 })();
 
 /* ===== lembretes ===== */
